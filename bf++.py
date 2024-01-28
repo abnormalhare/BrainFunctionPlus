@@ -26,7 +26,7 @@ class BFExecutor:
 
     def print_debug(self, char: str) -> None:
         clear()
-        print("-- MoreBrainFuck Debug Process --")
+        print("-- BrainFunction++ Debug Process --")
         print(f"Line {self.file_pos[0] if self.file_pos[0] >= 0 else "[end]"}, Character {self.file_pos[1]}")
         print()
         print("Rollover Mode:", self.rollover_mode)
@@ -138,6 +138,14 @@ class BFExecutor:
             for char in line:
                 self.instruction_set[-1].append(char)
 
+    def run_interpreter(self) -> None:
+        with open(sys.argv[2]) as f:
+            self.extract_file(f)
+
+        while self.file_pos[0] < len(self.instruction_set) and self.file_pos[0] >= 0:
+            if self.interpret_line(self.instruction_set[self.file_pos[0]]) == 0:
+                self.file_pos[0] += 1
+
 if __name__ == "__main__":
 
     if "bf++.py" in sys.argv[0]:
@@ -145,7 +153,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 3:
         print()
-        print("MoreBrainFuck, the better BF interpreter for all you programming needs.")
+        print("BrainFunction++, the better BF interpreter for all you programming needs.")
         print()
         print("Input Format:")
         print("\n\tpy morebf.py <file> (dump) (debug) [pausetime]")
@@ -153,7 +161,7 @@ if __name__ == "__main__":
         exit()
     elif len(sys.argv) == 3 and sys.argv[2] == "help":
         print()
-        print("MoreBrainFuck adds many things on top of Brainfuck, such as:")
+        print("BrainFunction++ adds many things on top of Brainfuck, such as:")
         print("- A detailed debug mode")
         print("- Relative Functions")
         print("- Internal Bit Rollover Switcher")
@@ -182,12 +190,6 @@ if __name__ == "__main__":
         exit()
 
     BF = BFExecutor()
-
-    with open(sys.argv[2]) as f:
-        BF.extract_file(f)
-
-    while BF.file_pos[0] < len(BF.instruction_set) and BF.file_pos[0] >= 0:
-        if BF.interpret_line(BF.instruction_set[BF.file_pos[0]]) == 0:
-            BF.file_pos[0] += 1
+    BF.run_interpreter()
 
     BF.print_debug("end")
