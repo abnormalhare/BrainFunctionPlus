@@ -1,6 +1,7 @@
 from collections import defaultdict
 import sys
 import os
+import keyboard
 from time import sleep
 from copy import copy
 
@@ -25,7 +26,6 @@ class BFExecutor:
         self.dumb = "dump" in sys.argv
 
     def print_debug(self, char: str) -> None:
-        clear()
         print("-- BrainFunction++ Debug Process --")
         print(f"Line {self.file_pos[0] if self.file_pos[0] >= 0 else "[end]"}, Character {self.file_pos[1]}")
         print()
@@ -110,12 +110,19 @@ class BFExecutor:
                 self.infArray[self.arrIndex] = ord(i[0])
         elif char == ".":
             self.output += chr(self.infArray[self.arrIndex])
-        if "debug" in sys.argv:
-            if len(sys.argv) == 4: speed = 1
-            else: speed = float(sys.argv[4])
+        if "debug" in sys.argv or "debugstep" in sys.argv:
+            if len(sys.argv) == 4:
+                speed = 1
+            else:
+                speed = float(sys.argv[4])
 
+            clear()
             self.print_debug(char)
-            sleep(speed)
+            
+            if "debugstep" in sys.argv:
+                if input() == "x": exit()
+            else:
+                sleep(speed)
     
     def interpret_line(self, line: list[str]) -> None:
         while self.file_pos[1] < len(line):
@@ -130,6 +137,10 @@ class BFExecutor:
             
             self.print_char_action(line[self.file_pos[1]])
             self.file_pos[1] += 1
+
+            if keyboard.is_pressed('x'):
+                self.file_pos[0] = -1
+                return 1
         return 0
     
     def extract_file(self, file) -> None:
@@ -156,7 +167,8 @@ if __name__ == "__main__":
         print("BrainFunction++, the better BF interpreter for all you programming needs.")
         print()
         print("Input Format:")
-        print("\n\tpy morebf.py <file> (dump) (debug) [pausetime]")
+        print("\n\tpy morebf.py <file>")
+        print("\tArgs: dump, debug [pausetime]/debugstep")
         print("For More Information, type \"py morebf.py help\"")
         exit()
     elif len(sys.argv) == 3 and sys.argv[2] == "help":
@@ -187,9 +199,11 @@ if __name__ == "__main__":
         print("\t$^ - Call up as many lines as the num at pointer")
         print("\t;  - Call Return. MUST BE USED IF FUNCTION IS CALLED")
         print("\t\"  - Comment")
+        print("\nIf you want to quit the program, hold x or input x on debugstep")
         exit()
 
     BF = BFExecutor()
     BF.run_interpreter()
 
-    BF.print_debug("end")
+    if not ("debug" in sys.argv or "debugstep" in sys.argv):
+        BF.print_debug("end")
