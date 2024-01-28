@@ -34,7 +34,7 @@ This is a list of commands that you can currently use in BrainFunction++
 | `$v`        | Calls the current memory cell's value amount of lines below |
 | `$^`        | Calls the current memory cell's value amount of lines above |
 | `;`         | Returns from a call. END OF LINES ARE NOT RETURNS |
-| `"`         | Comment, anything after is ignored. This also applies to commas |
+| `"`         | Comment, anything after is ignored. This also applies to semicolons |
 
  ##### All jumps and calls reset the character position to 0
 
