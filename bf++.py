@@ -4,135 +4,139 @@ import os
 from time import sleep
 from copy import copy
 
-infArray = defaultdict(int)
-info = {}
-file_pos = [0, 0]
-instruction_set = []
-loop = []
-calls = []
-rollover_modes = [0, 8, 16, 32]
-arrIndex = 0
-rollover_mode = 0
-output = ""
-char_exception = ""
 
 def clear() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
-def print_debug(c: str) -> None:
-    global infArray, arrIndex, rollover_mode
-    clear()
-    print("-- MoreBrainFuck Debug Process --")
-    print(f"Line {file_pos[0] if file_pos[0] >= 0 else "[end]"}, Character {file_pos[1]}")
-    print()
-    print("Rollover Mode:", rollover_mode)
-    print("Index:", arrIndex - 1, arrIndex, arrIndex + 1, sep="\t")
-    print("Value:", infArray[arrIndex - 1], infArray[arrIndex], infArray[arrIndex + 1], sep="\t")
-    print()
-    print("Loop Indexes:", *loop, sep="\t")
-    print("Func Locals:", *calls, sep="\t")
-    print()
-    print(f"Current Instruction: {char_exception if char_exception != "" else c}")
-    print()
-    print(f"-- Character Output --\n{output}")
-    if "dump" in sys.argv and c == "end":
-        print("\n\nDUMP:\n")
-        print(dict(infArray))
+class BFExecutor:
+    def __init__(self) -> None:
+        self.infArray = defaultdict(int)
+        self.info = {}
+        self.file_pos = [0, 0]
+        self.instruction_set = []
+        self.loop = []
+        self.calls = []
+        self.rollover_modes = [0, 8, 16, 32]
+        self.arrIndex = 0
+        self.rollover_mode = 0
+        self.output = ""
+        self.char_exception = ""
+        self.debug = "debug" in sys.argv
+        self.dumb = "dump" in sys.argv
 
-def exec_char(c: str) -> int | None:
-    global arrIndex, infArray, loop, char_exception, rollover_mode, file_pos
+    def print_debug(self, char: str) -> None:
+        clear()
+        print("-- MoreBrainFuck Debug Process --")
+        print(f"Line {self.file_pos[0] if self.file_pos[0] >= 0 else "[end]"}, Character {self.file_pos[1]}")
+        print()
+        print("Rollover Mode:", self.rollover_mode)
+        print("Index:", self.arrIndex - 1, self.arrIndex, self.arrIndex + 1, sep="\t")
+        print("Value:", self.infArray[self.arrIndex - 1], self.infArray[self.arrIndex], self.infArray[self.arrIndex + 1], sep="\t")
+        print()
+        print("Loop Indexes:", *self.loop, sep="\t")
+        print("Func Locals:", *self.calls, sep="\t")
+        print()
+        print(f"Current Instruction: {self.char_exception if self.char_exception != "" else char}")
+        print()
+        print(f"-- Character Output --\n{self.output}")
+        if "dump" in sys.argv and char == "end":
+            print("\n\nDUMP:\n")
+            print(dict(self.infArray))
 
-    if c == "<" and arrIndex > 0:
-        arrIndex -= 1
-    elif c == ">":
-        arrIndex += 1
-    elif c == "+":
-        infArray[arrIndex] += 1
-        if rollover_mode != 0 and infArray[arrIndex] > 2**rollover_mode - 1:
-            infArray[arrIndex] = 0
-    elif c == "-":
-        infArray[arrIndex] -= 1
-        if rollover_mode != 0 and infArray[arrIndex] < 0:
-            infArray[arrIndex] = 2**rollover_mode - 1
-    elif c == "[":
-        loop.append(file_pos[1])
-    elif c == "]":
-        if len(loop) == 0: raise f"Error: Invalid Loop at {arrIndex}!"
-        if infArray[arrIndex] != 0:
-            file_pos[1] = loop[-1]
-        else:
-            loop.pop()
-    elif c == "v":
-        try:
-            if info["func"] == "call":
-                calls.append([file_pos[0], file_pos[1] + 1])
-                file_pos[0] += 1
-            elif info["func"] == "ptr":
-                file_pos[0] += infArray[arrIndex]
-            elif info["func"] == "ptrcall":
-                calls.append([file_pos[0], file_pos[1] + 1])
-                file_pos[0] += infArray[arrIndex]
-            del info["func"]
-        except:
-            file_pos[0] += 1
-        file_pos[1] = 0
-        char_exception = c
-        return
-    elif c == "^" and file_pos[0] > 0:
-        file_pos[0] -= 1
-        file_pos[1] = 0
-        char_exception = c
-        return
-    elif c == "&":
-        info["func"] = "call"
-    elif c == "*":
-        info["func"] = "ptr"
-    elif c == "$":
-        info["func"] = "ptrcall"
-    elif c == "#":
-        rollover_mode = rollover_modes[(rollover_modes.index(rollover_mode) + 1) % len(rollover_modes)]
-    elif c == ";":
-        try:
-            file_pos = calls.pop()
-        except:
-            file_pos[0] = -1
-    
-    char_exception = ""
-
-def print_char_action(c: str) -> None:
-    global infArray, arrIndex, output
-
-    if c == ",":
-        i = input("Input Number: ")
-        try:
-            infArray[arrIndex] = int(i)
-        except:
-            infArray[arrIndex] = ord(i[0])
-    elif c == ".":
-        output += chr(infArray[arrIndex])
-    if "debug" in sys.argv:
-        if len(sys.argv) == 4: speed = 1
-        else: speed = float(sys.argv[4])
-
-        print_debug(c)
-        sleep(speed)
-    
-def interpret_line(line: list[str]) -> None:
-    global file_pos
-
-    while file_pos[1] < len(line):
-        if line[file_pos[1]] == '"': break
-
-        copy_pos = copy(file_pos)
-        exec_char(line[file_pos[1]])
-
-        if file_pos[0] != copy_pos[0]:
-            print_char_action(line[copy_pos[1]])
-            return 1
+    def exec_char(self, char: str) -> None:
+        if char == "<" and self.arrIndex > 0:
+            self.arrIndex -= 1
+        elif char == ">":
+            self.arrIndex += 1
+        elif char == "+":
+            self.infArray[self.arrIndex] += 1
+            if self.rollover_mode != 0 and self.infArray[self.arrIndex] > 2**self.rollover_mode - 1:
+                self.infArray[self.arrIndex] = 0
+        elif char == "-":
+            self.infArray[self.arrIndex] -= 1
+            if self.rollover_mode != 0 and self.infArray[self.arrIndex] < 0:
+                self.infArray[self.arrIndex] = 2**self.rollover_mode - 1
+        elif char == "[":
+            self.loop.append(self.file_pos[1])
+        elif char == "]":
+            if len(self.loop) == 0: raise f"Error: Invalid Loop at {self.arrIndex}!"
+            if self.infArray[self.arrIndex] != 0:
+                self.file_pos[1] = self.loop[-1]
+            else:
+                self.loop.pop()
+        elif char == "v":
+            try:
+                if self.info["func"] == "call":
+                    self.calls.append([self.file_pos[0], self.file_pos[1] + 1])
+                    self.file_pos[0] += 1
+                elif self.info["func"] == "ptr":
+                    self.file_pos[0] += self.infArray[self.arrIndex]
+                elif self.info["func"] == "ptrcall":
+                    self.calls.append([self.file_pos[0], self.file_pos[1] + 1])
+                    self.file_pos[0] += self.infArray[self.arrIndex]
+                del self.info["func"]
+            except:
+                self.file_pos[0] += 1
+            self.file_pos[1] = 0
+            self.char_exception = char
+            return
+        elif char == "^" and self.file_pos[0] > 0:
+            self.file_pos[0] -= 1
+            self.file_pos[1] = 0
+            self.char_exception = char
+            return
+        elif char == "&":
+            self.info["func"] = "call"
+        elif char == "*":
+            self.info["func"] = "ptr"
+        elif char == "$":
+            self.info["func"] = "ptrcall"
+        elif char == "#":
+            self.rollover_mode = self.rollover_modes[(self.rollover_modes.index(self.rollover_mode) + 1) % len(self.rollover_modes)]
+        elif char == ";":
+            try:
+                self.file_pos = self.calls.pop()
+            except:
+                self.file_pos[0] = -1
         
-        print_char_action(line[file_pos[1]])
-        file_pos[1] += 1
-    return 0
+        self.char_exception = ""
+
+    def print_char_action(self, char: str) -> None:
+        if char == ",":
+            i = input("Input Number: ")
+            try:
+                self.infArray[self.arrIndex] = int(i)
+            except:
+                self.infArray[self.arrIndex] = ord(i[0])
+        elif char == ".":
+            self.output += chr(self.infArray[self.arrIndex])
+        if "debug" in sys.argv:
+            if len(sys.argv) == 4: speed = 1
+            else: speed = float(sys.argv[4])
+
+            self.print_debug(char)
+            sleep(speed)
+    
+    def interpret_line(self, line: list[str]) -> None:
+        while self.file_pos[1] < len(line):
+            if line[self.file_pos[1]] == '"': break
+
+            copy_pos = copy(self.file_pos)
+            self.exec_char(line[self.file_pos[1]])
+
+            if self.file_pos[0] != copy_pos[0]:
+                self.print_char_action(line[copy_pos[1]])
+                return 1
+            
+            self.print_char_action(line[self.file_pos[1]])
+            self.file_pos[1] += 1
+        return 0
+    
+    def extract_file(self, file) -> None:
+        for line in file:
+            self.instruction_set.append([])
+            for char in line:
+                self.instruction_set[-1].append(char)
 
 if __name__ == "__main__":
 
@@ -144,8 +148,7 @@ if __name__ == "__main__":
         print("MoreBrainFuck, the better BF interpreter for all you programming needs.")
         print()
         print("Input Format:")
-        print("\n\tpy morebf.py <file> (debug) [pausetime]")
-        print("  \tpy morebf.py <file> dump")
+        print("\n\tpy morebf.py <file> (dump) (debug) [pausetime]")
         print("For More Information, type \"py morebf.py help\"")
         exit()
     elif len(sys.argv) == 3 and sys.argv[2] == "help":
@@ -178,14 +181,13 @@ if __name__ == "__main__":
         print("\t\"  - Comment")
         exit()
 
+    BF = BFExecutor()
+
     with open(sys.argv[2]) as f:
-        for line in f:
-            instruction_set.append([])
-            for char in line:
-                instruction_set[-1].append(char)
+        BF.extract_file(f)
 
-    while file_pos[0] < len(instruction_set) and file_pos[0] >= 0:
-        if interpret_line(instruction_set[file_pos[0]]) == 0:
-            file_pos[0] += 1
+    while BF.file_pos[0] < len(BF.instruction_set) and BF.file_pos[0] >= 0:
+        if BF.interpret_line(BF.instruction_set[BF.file_pos[0]]) == 0:
+            BF.file_pos[0] += 1
 
-    print_debug("end")
+    BF.print_debug("end")
